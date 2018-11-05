@@ -1,42 +1,43 @@
 package com.hidden_champions.containers;
 
-public class Firm implements FirmInterface {
+import java.util.LinkedList;
+
+/**
+ * Class for representing a firm
+ * @author Harald
+ *
+ */
+public class Firm {
 	
-	private int 			id;
-	private StatsInterface 	stats;
+	private String orgnr;
+	private String name;
+	private int jurForm;
+	private LinkedList<Stats> stats;
 	
-	//----------------------------
-	//	CONSTRUCTORS
-	//----------------------------
-	
-	protected Firm (int newId) {
-		id = newId;
-		stats = null;
+	public Firm (String orgnr, String name, String jurForm) {
+		this.orgnr = orgnr;
+		this.name = name;
+		this.jurForm = Integer.valueOf(jurForm);
+		this.stats = new LinkedList<Stats>();
 	}
 	
-	protected Firm (int newId, StatsInterface initialStats) {
-		id = newId;
-		stats = initialStats;
+	public void addYear(Stats stat) {
+		stats.add(stat);
 	}
 	
-	//----------------------------
-	//	GETTERS & SETTERS
-	//----------------------------
-	
-	public int getId() {
-		return id;
-	}
-		
-	public StatsInterface getStats() {
+	public LinkedList<Stats> getStats(){
 		return stats;
 	}
 	
-	public void setId(int newId) {
-		id = newId;
+	public String getOrgnr() {
+		return orgnr;
 	}
 	
-	public void setStats(StatsInterface newStats) {
-		stats = newStats;
+	public String getName() {
+		return name;
 	}
-
+	
+	public int getJurform() {
+		return jurForm;
+	}
 }
