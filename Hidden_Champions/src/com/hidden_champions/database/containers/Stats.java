@@ -1,4 +1,4 @@
-package com.hidden_champions.containers;
+package com.hidden_champions.database.containers;
 
 import java.util.LinkedList;
 

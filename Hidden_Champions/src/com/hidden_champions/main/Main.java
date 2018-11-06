@@ -1,50 +1,58 @@
 package com.hidden_champions.main;
 
-import com.hidden_champions.containers.Data;
-import com.hidden_champions.containers.Firm;
-import com.hidden_champions.containers.Stats;
+import com.hidden_champions.database.Data;
 import com.hidden_champions.database.DatabaseManager;
+import com.hidden_champions.database.containers.Firm;
+import com.hidden_champions.database.containers.Stats;
 import com.hidden_champions.io.SerranoReader;
 
 public class Main {
-
+	
 	public static void main (String[] args) {
 		
 		SerranoReader reader = SerranoReader.instance();
 		DatabaseManager database = DatabaseManager.instance();
-
+		Data factory = new Data();
+		
 		Stats data = new Stats(reader.getNext());					
-		Firm firm = new Firm("","","-1");
+		Firm firm = null;
 		double i = 0;
 		double done = 0;
 		double max = 1193156;
 
-		double start = System.currentTimeMillis();
+		long start = System.currentTimeMillis();
 				
 		while(reader.hasNext()) {
 			data = new Stats(reader.getNext());
 			
-			if(data.getAttribute(0).equals(firm.getOrgnr())) {
-				firm.addYear(data);
+			//Create the first firm
+			if (firm == null) {
+				firm = factory.createFirm(data);
+				i++;
+				
+			//Add an extra year's worth of data to a firm
+			} else if(data.getAttribute(0).equals(firm.getOrgnr())) {
+				factory.addYear(firm, data);
+				
+			//Send old firm to database and create a new one
 			} else {
-				//Send old firm to database
-				if(!firm.getOrgnr().equals(""))
-					database.add(firm);
-
-				//Create new firm
-				firm = new Firm(data.getAttribute(Data.ORGNR),data.getAttribute(Data.NAME),data.getAttribute(Data.JURFORM));
-				firm.addYear(data);
+				database.add(firm);
+				firm = factory.createFirm(data);
 				
 				//Print progress
 				i++;
-				if(i/max>done) {
-					String output = (int)(done*100) + " % : " + String.format("%.01f s", (System.currentTimeMillis()-start)/1000);
-					System.out.println(output);
-					done = done + 0.01;
+				if((i/max)*100 > done) {
+					Main.printProgress(done++, start);
 				}
 			}
 		}
 		database.finish();
+		Main.printProgress(100, start);
 		System.out.println("Done!");
+	}
+	
+	public static void printProgress(double done, double start) {
+		String output = (int) done + " % : " + String.format("%.01f s", (System.currentTimeMillis()-start)/1000);
+		System.out.println(output);
 	}
 }

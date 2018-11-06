@@ -6,9 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.LinkedList;
 
-import com.hidden_champions.containers.Data;
-import com.hidden_champions.containers.Firm;
-import com.hidden_champions.containers.Stats;
+import com.hidden_champions.database.containers.Firm;
+import com.hidden_champions.database.containers.Stats;
 
 /**
  * Class for managing connection with and data insertion into the MySQL database
@@ -21,7 +20,7 @@ public class DatabaseManager {
 	
 	private static DatabaseManager instance;
 	
-	private String url 	= "jdbc:mysql://localhost:3306/hidden_champion?";
+	private String url 	= "jdbc:mysql://localhost:3306/hidden_champions?";
 	private String mods = "user=LordH&password=1123581321aA!&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
 	private Connection con;
 	private LinkedList<Firm> firms;
@@ -57,13 +56,16 @@ public class DatabaseManager {
 		//Prepare statements for firm data insertion
 		String addFirm = "INSERT INTO firms (id, name) VALUES (?, ?);";
 		String addData = "INSERT INTO report "
-				+ "(id, year, revenue, employees, total_assets, profit_margin, return_on_assets) "
-				+ "VALUES (?, ?, ?, ?, ?, ?, ?);";
+				+ "(id, year, owner_structure, owner_country, revenue, "
+				+ "value_added, employees, total_assets, fixed_assets, "
+				+ "operating_profit, profit_margin, turnover_rate, return_on_assets, solidity, debt_equity_ratio) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 		PreparedStatement firmPrep = con.prepareStatement(addFirm);
 		PreparedStatement dataPrep = con.prepareStatement(addData);
 		
 		boolean ok = false;
 		boolean insert = false;
+		int count = 0;
 		
 		//Iterate over all firms in the list to add them to the batch insert
 		for (Firm firm : firms) {
@@ -72,9 +74,10 @@ public class DatabaseManager {
 			ok = false;
 			for (Stats stat : firm.getStats()) {
 				String employees = stat.getAttribute(Data.EMPLOYEES);
+				String year = stat.getAttribute(Data.YEAR);
 				if(employees.isEmpty()) {
 					continue;
-				} else if(Integer.valueOf(employees)>499) {
+				} else if(Integer.valueOf(employees)>249 & Integer.valueOf(year)==2016) {
 					ok = true;
 					break;
 				}
@@ -87,29 +90,47 @@ public class DatabaseManager {
 			for (Stats stat : stats) {
 				LinkedList<String> key_figures = new LinkedList<String>();
 				key_figures.add(stat.getAttribute(Data.REVENUE));
+				key_figures.add(stat.getAttribute(Data.VALUE_ADDED));
 				key_figures.add(stat.getAttribute(Data.EMPLOYEES));
 				key_figures.add(stat.getAttribute(Data.TOTAL_ASSETS));
+				key_figures.add(stat.getAttribute(Data.FIXED_ASSETS));
+				key_figures.add(stat.getAttribute(Data.OPERATING_PROFIT));
+				key_figures.add(stat.getAttribute(Data.FINANCIAL_INCOME));
 				key_figures.add(stat.getAttribute(Data.PROFIT_MARGIN));
+				key_figures.add(stat.getAttribute(Data.TURNOVER_RATE));
 				key_figures.add(stat.getAttribute(Data.RETURN_ON_ASSETS));
+				key_figures.add(stat.getAttribute(Data.SOLIDITY));
+				key_figures.add(stat.getAttribute(Data.DEBT_EQUITY_RATIO));
 				
 				//Check if data should be inserted (we don't want empty records)
-				ok = false;
+				ok = true;
 				for(String s : key_figures)
 					if (s.isEmpty()) {
-						ok = true;
+						ok = false;
 						break;
 					}
 				if(!ok) {
 					continue;
 				}
-
-				dataPrep.setString(1, firm.getOrgnr());
-				dataPrep.setInt(2, Integer.valueOf(stat.getAttribute(Data.YEAR)));
-				dataPrep.setDouble(3, Double.valueOf(stat.getAttribute(Data.REVENUE)));
-				dataPrep.setDouble(4, Double.valueOf(stat.getAttribute(Data.EMPLOYEES)));
-				dataPrep.setDouble(5, Double.valueOf(stat.getAttribute(Data.TOTAL_ASSETS)));
-				dataPrep.setDouble(6, Double.valueOf(stat.getAttribute(Data.PROFIT_MARGIN)));
-				dataPrep.setDouble(7, Double.valueOf(stat.getAttribute(Data.RETURN_ON_ASSETS)));
+				
+				//Firm info
+				count = 1;
+				dataPrep.setString(count++, firm.getOrgnr());
+				dataPrep.setInt(count++, Integer.valueOf(stat.getAttribute(Data.YEAR)));
+				dataPrep.setString(count++, stat.getAttribute(Data.OWNER_STRUCTURE));
+				dataPrep.setString(count++, stat.getAttribute(Data.OWNER_COUNTRY));
+				//Key figures
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.REVENUE)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.VALUE_ADDED)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.EMPLOYEES)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.TOTAL_ASSETS)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.FIXED_ASSETS)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.OPERATING_PROFIT)) + Double.valueOf(stat.getAttribute(Data.FINANCIAL_INCOME)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.PROFIT_MARGIN)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.TURNOVER_RATE)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.RETURN_ON_ASSETS)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.SOLIDITY)));
+				dataPrep.setDouble(count++, Double.valueOf(stat.getAttribute(Data.DEBT_EQUITY_RATIO)));
 				dataPrep.addBatch();
 				insert = true;
 			}
@@ -156,7 +177,7 @@ public class DatabaseManager {
 	// ---------------------------------------------------------------------
 	
 	public void add(Firm newFirm) {
-		if(newFirm.getJurform() == Data.AB) {
+		if(newFirm.getJurform() == Data.AKTIEBOLAG) {
 			firms.add(newFirm);
 			if(firms.size() == DatabaseManager.BATCH_SIZE) {
 				try {
