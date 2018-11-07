@@ -21,7 +21,7 @@ public class DatabaseManager {
 	private static DatabaseManager instance;
 	
 	private String url 	= "jdbc:mysql://localhost:3306/hidden_champions?";
-	private String mods = "user=LordH&password=1123581321aA!&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+	private String mods = "user=dev&password=temporarypassword&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
 	private Connection con;
 	private LinkedList<Firm> firms;
 	
